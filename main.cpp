@@ -15,6 +15,7 @@ int main(void)
     StackInit(&stk1, 20, &stk1_err_status);
     ProcessError(stk1_err_status);
     ShowStack(&stk1, &stk1_err_status);
+    ProcessError(stk1_err_status);
 
     for (int i = 0; i < 5; i++)
     {
