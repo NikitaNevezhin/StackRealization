@@ -7,12 +7,14 @@
 #include "ErrorProcessor.cpp"
 #include "Stack.cpp"
 
+#define GET_NAME(var) #var
+
 int main(void)
 {   
     stack_t stk1 = {};
     int stk1_err_status = OKAY;
 
-    StackInit(&stk1, 20, &stk1_err_status);
+    StackInit(&stk1, 20, &stk1_err_status ON_DEBUG(, __FILE__, GET_NAME(stk1), __LINE__));
     ProcessError(stk1_err_status);
     ShowStack(&stk1, &stk1_err_status);
     ProcessError(stk1_err_status);
@@ -29,6 +31,7 @@ int main(void)
     //    ProcessError(stk1_err_status);
     // }
 
+    // stk1.data = NULL;
     double x = StackPop(&stk1, &stk1_err_status);
     ProcessError(stk1_err_status);
 

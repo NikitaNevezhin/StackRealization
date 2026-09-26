@@ -2,6 +2,8 @@
 
 #define STACK_CPP
 
+#define STACK_DEBUG
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -11,15 +13,26 @@
 #include "ErrorProcessor.cpp"
 #include "ASSERT_STACK_OK.h"
 
+#ifdef STACK_DEBUG
+
+#define ON_DEBUG(...) __VA_ARGS__
+
+#else
+
+#define ON_DEBUG(...)
+
+#endif
+
 struct stack_t 
 {
     double* data;
     int size;
     int capacity;
+    ON_DEBUG(const char* file; const char* name; int line);
 };
 
 
-void       StackInit        (stack_t* stk, int capacity, int* err_status);
+void       StackInit        (stack_t* stk, int capacity, int* err_status ON_DEBUG(, const char* file, const char* name, int line));
 
 void       ShowStack        (stack_t* stk, int* err_status);
 
@@ -36,7 +49,7 @@ double     StackPop         (stack_t* stk, int* err_status);
 void       StackDestroy     (stack_t* stk, int* err_status);
 
 
-void StackInit(stack_t* stk, int capacity, int* err_status)
+void StackInit(stack_t* stk, int capacity, int* err_status ON_DEBUG(, const char* file, const char* name, int line))
 {
     assert(stk);
 
@@ -50,6 +63,10 @@ void StackInit(stack_t* stk, int capacity, int* err_status)
     
     stk->size = 0;
     stk->capacity = capacity;
+
+    ON_DEBUG(stk->file = file;);
+    ON_DEBUG(stk->name = name;)
+    ON_DEBUG(stk->line = line;)
 
     ASSERT_STACK_OK(StackVerify(stk), stk);
 
@@ -187,6 +204,8 @@ void StackDestroy(stack_t* stk, int* err_status)
 
     stk->size = -1;
     stk->capacity = -1;
+
+    *err_status = OKAY;
 }
 
 #endif
