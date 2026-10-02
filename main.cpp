@@ -32,7 +32,7 @@ int main(void)
     //    ProcessError(stk1_err_status);
     // }
 
-    stk1.size = 100;
+    // stk1.size = 100;
     stack_elem_t x = StackPop(&stk1, &stk1_err_status);
     ProcessError(stk1_err_status);
 
@@ -46,4 +46,3 @@ int main(void)
 
     return EXIT_SUCCESS;
 }
-

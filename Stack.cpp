@@ -29,12 +29,20 @@
 
 #define POIZON NAN
 
+#define STRUCT_LEFT_CANARY  0xDEDDEDDED
+#define STRUCT_RIGHT_CANARY 0xEDAEDAEDA
+
+#define DATA_LEFT_CANARY  1776.2076
+#define DATA_RIGHT_CANARY -2012.1231
+
 #define STACK_DUMP(stk, err_status) StackDump(stk, err_status, __FILE__, __LINE__, __func__)  
 
 typedef double stack_elem_t;
 
 struct stack_t 
 {
+    unsigned long long left_canary;
+
     stack_elem_t* data;
     int size;
     int capacity;
@@ -45,7 +53,9 @@ struct stack_t
         const char* name; 
         int line;
     )
-};
+
+    unsigned long long right_canary;
+}; 
 
 enum RESIZE_DIRECTIONS
 {
@@ -75,14 +85,26 @@ void StackInit(stack_t* stk, int capacity, int* err_status ON_DEBUG(, const char
 {
     assert(stk);
 
-    stk->data = (stack_elem_t*)malloc(capacity * sizeof(stack_elem_t)); // no need of calloc here, because later we fill given memory with POIZON
+    if (capacity <= 0)
+    {
+        *err_status = NON_POSITIVE_CAPACITY;
+        return;
+    } 
 
-    if (stk->data == NULL)
+    stk->left_canary = STRUCT_LEFT_CANARY;
+    stk->right_canary = STRUCT_RIGHT_CANARY;
+
+    stack_elem_t* given_memory = (stack_elem_t*)malloc((capacity + 2) * sizeof(stack_elem_t)); // +2 - takes places for two canaries
+
+    if (given_memory == NULL)
     {
         *err_status = CALLOC_FAILURE;
         return;
     }
+
+    given_memory[0] = DATA_LEFT_CANARY;
     
+    stk->data = given_memory + 1; // skipping canary to the useful info
     stk->size = 0;
     stk->capacity = capacity;
 
@@ -90,6 +112,8 @@ void StackInit(stack_t* stk, int capacity, int* err_status ON_DEBUG(, const char
     {
         stk->data[i] = POIZON;
     }
+
+    stk->data[capacity] = DATA_RIGHT_CANARY;
 
     ON_DEBUG(stk->file = file);
     ON_DEBUG(stk->name = name);
@@ -156,10 +180,24 @@ void StackDump(stack_t* stk, int err_status, const char* file, int line, const c
     if (err_status == STACK_NULL)
         return;
 
+    printf("Struct canaries:\n");
+    printf("    Left:  %#llX (expected %#llX)\n", stk->left_canary, STRUCT_LEFT_CANARY);
+    printf("    Right: %#llX (expected %#llX)\n", stk->right_canary, STRUCT_RIGHT_CANARY);
+
     printf("    Size:      %d\n", stk->size);
     printf("    Capacity:  %d\n", stk->capacity);
 
     printf("    data [" GREEN "%p" RESET "]\n", stk->data);
+    printf("    data canaries:\n");
+
+    if (stk->data != NULL)
+    {
+        printf("        Left:  %lf (expected %lf)\n", stk->data[-1], DATA_LEFT_CANARY);
+        printf("        Right: %lf (expected %lf)\n", stk->data[stk->capacity], DATA_RIGHT_CANARY);
+    }
+
+    else printf("       data is NULL, no canaries :( \n");
+
     PrintStackData(stk);
 
     printf("-------------------------------------\n");
@@ -169,6 +207,12 @@ int StackVerify(stack_t* stk)
 {
     if (stk == NULL)
         return STACK_NULL;
+
+    else if (stk->left_canary != STRUCT_LEFT_CANARY || stk->right_canary != STRUCT_RIGHT_CANARY)
+        return STRUCT_CANARY_CHANGED;
+
+    else if (!FloatEqual(stk->data[-1], DATA_LEFT_CANARY) || !FloatEqual(stk->data[stk->capacity], DATA_RIGHT_CANARY))
+        return DATA_CANARY_CHANGED;
 
     else if (stk->data == NULL)
         return DATA_NULL;
@@ -200,7 +244,7 @@ void StackResize(stack_t* stk,int* err_status, int direction)
     if (new_capacity < 4) // in case we work with small stacks, we wouldn't like the capacity to fall less than 4
         new_capacity = 4;
 
-    stack_elem_t* temp = (stack_elem_t*)realloc(stk->data, new_capacity * sizeof(stack_elem_t));
+    stack_elem_t* temp = (stack_elem_t*)realloc(stk->data - 1, (new_capacity + 2) * sizeof(stack_elem_t)); // -1 to get the pointer on the left canary
 
     if (temp == NULL)
     {
@@ -208,7 +252,7 @@ void StackResize(stack_t* stk,int* err_status, int direction)
         return;
     }
 
-    stk->data = temp;
+    stk->data = temp + 1; // skipping left canary to the useful info
 
     if (direction == UP)
     {
@@ -217,6 +261,8 @@ void StackResize(stack_t* stk,int* err_status, int direction)
     }
 
     stk->capacity = new_capacity;
+    stk->data[stk->capacity] = DATA_RIGHT_CANARY;
+
     ASSERT_STACK_OK(stk)
 
     *err_status = OKAY;
@@ -267,11 +313,23 @@ stack_elem_t StackPop(stack_t* stk, int* err_status)
 
 void StackDestroy(stack_t* stk, int* err_status)
 {
+    if (stk == NULL)
+    {
+        *err_status = STACK_NULL;
+        return;
+    }
+
+    else if (stk->data == NULL && stk->capacity == 0) // in case if stk is already destroyed
+    {
+        *err_status = OKAY;
+        return;
+    }
+
     ASSERT_STACK_OK(stk);
 
     if (stk->data != NULL)
     {
-        free(stk->data);
+        free(stk->data - 1); // stk->data points on useful info but we have canary before. that's why -1
         stk->data = NULL;
     }
 

@@ -23,7 +23,9 @@ enum ERROR_STATUSES
     STACK_UNDERFLOW = -4,
     DATA_NULL = -5,
     NON_POSITIVE_CAPACITY = -6,
-    STACK_NULL = -7
+    STACK_NULL = -7,
+    STRUCT_CANARY_CHANGED = -8,
+    DATA_CANARY_CHANGED = -9
 };
 
 const char* GetErrorString(int err_status) 
@@ -43,6 +45,10 @@ const char* GetErrorString(int err_status)
         case DATA_NULL:             return "DATA_NULL";
 
         case NON_POSITIVE_CAPACITY: return "NON_POSITIVE_CAPACITY";
+
+        case STRUCT_CANARY_CHANGED: return "STRUCT_CANARY_CHANGED";
+
+        case DATA_CANARY_CHANGED:   return "DATA_CANARY_CHANGED";
 
         default:                    return "You are seriously fucked up, man";
     }
@@ -82,6 +88,14 @@ void ProcessError(int err_status)
 
     case NON_POSITIVE_CAPACITY:
         printf(RED "Stack capacity is not positive\n" RESET);
+        abort();
+
+    case STRUCT_CANARY_CHANGED:
+        printf(RED "Struct canary value is changed.\n" RESET);
+        abort();
+
+    case DATA_CANARY_CHANGED:
+        printf(RED "Stack data canary value is changed.\n" RESET);
         abort();
     
     default:
