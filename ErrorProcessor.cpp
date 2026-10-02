@@ -10,7 +10,9 @@
 
 #include "PrintColor.h"
 
-void    ProcessError   (int ErrorStatus);
+const char*     GetErrorString      (int err_status);
+
+void            ProcessError        (int ErrorStatus);
 
 enum ERROR_STATUSES
 {
@@ -20,8 +22,31 @@ enum ERROR_STATUSES
     STACK_OVERFLOW = -3,
     STACK_UNDERFLOW = -4,
     DATA_NULL = -5,
-    NON_POSITIVE_CAPACITY = -6
+    NON_POSITIVE_CAPACITY = -6,
+    STACK_NULL = -7
 };
+
+const char* GetErrorString(int err_status) 
+{
+    switch (err_status) 
+    {
+        case OKAY:                  return "OKAY";
+
+        case CALLOC_FAILURE:        return "CALLOC_FAILURE";
+
+        case REALLOC_FAILURE:       return "REALLOC_FAILURE";
+
+        case STACK_OVERFLOW:        return "STACK_OVERFLOW";
+
+        case STACK_UNDERFLOW:       return "STACK_UNDERFLOW";
+
+        case DATA_NULL:             return "DATA_NULL";
+
+        case NON_POSITIVE_CAPACITY: return "NON_POSITIVE_CAPACITY";
+
+        default:                    return "You are seriously fucked up, man";
+    }
+}
 
 void ProcessError(int err_status)
 {
