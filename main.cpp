@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <math.h>
 
-
 #include "ErrorProcessor.cpp"
 #include "Stack.cpp"
 
@@ -12,7 +11,7 @@
 int main(void)
 {   
     stack_t stk1 = {};
-    int stk1_err_status = OKAY;
+    ERROR_STATUS stk1_err_status = OKAY;
 
     STACK_INIT(&stk1, 20, &stk1_err_status);
     ProcessError(stk1_err_status);

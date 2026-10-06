@@ -10,15 +10,11 @@
 
 #include "PrintColor.h"
 
-const char*     GetErrorString      (int err_status);
-
-void            ProcessError        (int ErrorStatus);
-
-enum ERROR_STATUSES
+enum ERROR_STATUS
 {
     OKAY = 1,
-    CALLOC_FAILURE = -1,
-    REALLOC_FAILURE = -2,
+    CALLOC_FAILURE = 2,
+    REALLOC_FAILURE = 4,
     STACK_OVERFLOW = -3,
     STACK_UNDERFLOW = -4,
     DATA_NULL = -5,
@@ -28,10 +24,17 @@ enum ERROR_STATUSES
     DATA_CANARY_CHANGED = -9
 };
 
-const char* GetErrorString(int err_status) 
+const char*     GetErrorString      (ERROR_STATUS err_status);
+
+void            ProcessError        (ERROR_STATUS ErrorStatus);
+
+
+const char* GetErrorString(ERROR_STATUS err_status) 
 {
     switch (err_status) 
     {
+        case STACK_NULL:            return "STACK_NULL";
+
         case OKAY:                  return "OKAY";
 
         case CALLOC_FAILURE:        return "CALLOC_FAILURE";
@@ -54,11 +57,16 @@ const char* GetErrorString(int err_status)
     }
 }
 
-void ProcessError(int err_status)
+void ProcessError(ERROR_STATUS err_status)
 {
     switch (err_status)
     {  
     case OKAY:
+        break;
+
+    case STACK_NULL:
+        printf(RED "Stack is NULL\n" RESET);
+        abort();
         break;
     
     case CALLOC_FAILURE:
