@@ -16,7 +16,7 @@ int main(void)
     STACK_INIT(&stk1, 20, &stk1_err_status);
     ProcessError(stk1_err_status);
 
-    StackDump(&stk1, stk1_err_status, __FILE__, __LINE__, __func__);
+    STACK_DUMP(&stk1, stk1_err_status);
     ProcessError(stk1_err_status);
 
     for (int i = 0; i < 5; i++)
@@ -25,19 +25,15 @@ int main(void)
         ProcessError(stk1_err_status);
     }
 
-    // for (int i = 0; i < 5; i++)
-    // {
-    //    StackPop(&stk1, &stk1_err_status);
-    //    ProcessError(stk1_err_status);
-    // }
-
-    // stk1.size = 100;
+    stk1.data = NULL;
+    stk1.size = 100;
+    stk1.left_canary = 0xB00B5;
     stack_elem_t x = StackPop(&stk1, &stk1_err_status);
     ProcessError(stk1_err_status);
 
     printf("x = %lg\n", x);
 
-    StackDump(&stk1, stk1_err_status, __FILE__, __LINE__, __func__);
+    STACK_DUMP(&stk1, stk1_err_status);
     ProcessError(stk1_err_status);
 
     StackDestroy(&stk1, &stk1_err_status);

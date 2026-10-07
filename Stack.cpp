@@ -136,7 +136,7 @@ void PrintStackData(stack_t* stk)  // this function is used in StackDump. Thats 
 
     else if (stk->data == NULL)
     {
-        printf("NULL data\n");
+        printf(RED "    Stack data is NULL pointer\n" RESET);
         return;
     }
 
@@ -176,7 +176,9 @@ void StackDump(stack_t* stk, ERROR_STATUS err_status, const char* file, int line
     printf("stack_t \"%s\" initialized in %s:%d\n", stk->name, stk->file, stk->line); // debug info we only have in debug mode
     #endif
 
-    printf("err_status = %s\n", GetErrorString(err_status));
+    printf("err_status = ");
+    PrintAllErrors(err_status);
+    printf("\n");
 
     if (err_status == STACK_NULL)
         return;
@@ -207,27 +209,34 @@ void StackDump(stack_t* stk, ERROR_STATUS err_status, const char* file, int line
 ERROR_STATUS StackVerify(stack_t* stk)
 {
     if (stk == NULL)
-        return STACK_NULL;
+        return STACK_NULL;  // immediately return STACK_NULL as we cannot check anything below (bro, stack is NULL)
 
-    else if (stk->left_canary != STRUCT_LEFT_CANARY || stk->right_canary != STRUCT_RIGHT_CANARY)
-        return STRUCT_CANARY_CHANGED;
+    int status = OKAY;  // bit operations give warning, so working with int first
 
-    else if (!FloatEqual(stk->data[-1], DATA_LEFT_CANARY) || !FloatEqual(stk->data[stk->capacity], DATA_RIGHT_CANARY))
-        return DATA_CANARY_CHANGED;
+    if (stk->left_canary != STRUCT_LEFT_CANARY || stk->right_canary != STRUCT_RIGHT_CANARY)
+        status |= STRUCT_CANARY_CHANGED;
 
-    else if (stk->data == NULL)
-        return DATA_NULL;
+    if (stk->data == NULL) 
+    {
+        status |= DATA_NULL;
+    } 
+
+    else 
+    {
+        if (!FloatEqual(stk->data[-1], DATA_LEFT_CANARY) || !FloatEqual(stk->data[stk->capacity], DATA_RIGHT_CANARY))
+            status |= DATA_CANARY_CHANGED;
+    }
     
-    else if (stk->capacity <= 0)
-        return NON_POSITIVE_CAPACITY;
+    if (stk->capacity <= 0)
+        status |= NON_POSITIVE_CAPACITY;
 
-    else if (stk->size < 0)
-        return STACK_UNDERFLOW;
+    if (stk->size < 0)
+        status |= STACK_UNDERFLOW; // 
 
-    else if (stk->size > stk->capacity)
-        return STACK_OVERFLOW;
+    if (stk->capacity > 0 && stk->size > stk->capacity)
+        status |= STACK_OVERFLOW;
 
-    return OKAY;
+    return (ERROR_STATUS)status;  // converting to ERROR_STATUS after working with int
 }
 
 void StackResize(stack_t* stk,ERROR_STATUS* err_status, int direction)
